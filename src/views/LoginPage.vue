@@ -86,11 +86,11 @@ const loginForm = reactive(
 
 const rules = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'change' },
+    { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 3, max: 15, message: '用户名必须是3-15位的字符', trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'change' },
+    { required: true, message: '请输入密码', trigger: 'blur' },
     {
       pattern: /^\S{3,15}$/,
       message: '密码必须是3-15位非空字符',
@@ -98,7 +98,7 @@ const rules = {
     }
   ],
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'change' },
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
     {
       pattern: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
       message: '请正确输入邮箱',
@@ -195,7 +195,7 @@ const getCode = ref(true)
           <h1>登录</h1>
         </el-form-item>
         <el-form-item prop="email">
-          <el-input :prefix-icon="User" placeholder="请输入邮箱" v-model="loginForm.username"></el-input>
+          <el-input :prefix-icon="User" placeholder="请输入邮箱" v-model="loginForm.email"></el-input>
         </el-form-item>
         <el-form-item prop="password">
           <el-input
