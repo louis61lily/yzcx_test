@@ -1,22 +1,5 @@
 <template>
-  <div id="fixedAlert" style="position: fixed; top: 90%; left: 1%; z-index: 9999; width: 30vw">
-    
-
-      <el-dropdown placement="bottom-end" @command="handleCommand">
-        <span class="el-dropdown__box">
-          <el-avatar :src="userStore.user.avatarUrl" class="header-img"/>
-        </span>
-        <!-- 折叠部分 -->
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item command="logout" :icon="SwitchButton" @click="logouthandeler">退出登录</el-dropdown-item>
-          </el-dropdown-menu>
-          <el-dropdown-menu>
-            <el-dropdown-item command="logout" :icon="User"  disabled>{{userStore.user.username}}</el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
-  </div>
+  
   <div id="fixedAlert" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; width: 30vw">
     <el-alert
     title="Tip"
@@ -27,43 +10,87 @@
   </div>
     <el-container id="box">
       <el-aside id="interactiveItem">
+        <img @click="toRefresh" src="@/assets/图片1.png" style="position: fixed; top: 5px; left: 5px; z-index: 9999; width: 70px; height:70px;">
         <interactiveBox @dataChanged="reciveInfo" />
-        <el-row  v-if="statistic.distance" id="statisticData">
-          <el-col :span="8">
-            <el-statistic title="路线全长" :value="`${statistic.distance/1000}km`" />
-          </el-col>
-          <el-col :span="8">
-            <el-statistic title="花费时间" :value="`${(statistic.time/3600.0).toFixed(2)}h`" />
-          </el-col>
-          <el-col :span="8">
-             <el-statistic title="预计费用" :value="`${statistic.toll}元`" />
-          </el-col>
-        </el-row>
+          <el-row  v-if="statistic.distance" id="statisticData">
+            <el-col :span="8">
+              <el-statistic title="路线全长" :value="`${statistic.distance/1000}km`" />
+            </el-col>
+            <el-col :span="8">
+              <el-statistic title="花费时间" :value="`${(statistic.time/3600.0).toFixed(2)}h`" />
+            </el-col>
+            <el-col :span="8">
+               <el-statistic title="预计费用" :value="`${statistic.toll}元`" />
+            </el-col>
+          </el-row>
+          <div id="bottomBox">
+              <span id="fixedAlert">
+                   <el-dropdown placement="bottom-end" @command="handleCommand">
+                     <span class="el-dropdown__box">
+                       <el-avatar :src="userStore.user.avatarUrl" class="header-img"/>
+                     </span>
+                     <!-- 折叠部分 -->
+                     <template #dropdown>
+                       <el-dropdown-menu>
+                         <el-dropdown-item command="logout" :icon="SwitchButton" @click="logouthandeler">退出登录</el-dropdown-item>
+                       </el-dropdown-menu>
+                       <el-dropdown-menu>
+                         <el-dropdown-item :icon="Picture"  @click="changeAvatar">更改头像</el-dropdown-item>
+                       </el-dropdown-menu>
+                       <el-dropdown-menu>
+                         <el-dropdown-item :icon="User"  disabled>{{userStore.user.username}}</el-dropdown-item>
+                       </el-dropdown-menu>
+                     </template>
+                   </el-dropdown>
+               </span>
+              <el-popover 
+                id="contactUs" 
+                placement="top-start"
+                title="联系方式"
+                :width="200"
+                trigger="hover"
+                content="可添加管理员QQ号:1095235717">
+                <template #reference>
+                  <el-button>联系我们</el-button>
+                </template>
+              </el-popover>
+               <el-popover 
+                id="responseQue"
+                placement="top-start"
+                title="邮箱反馈"
+                :width="200"
+                trigger="hover"
+                content="可将问题发送至邮箱1095235717@qq.com,三个工作日内解决">
+                <template #reference>
+                  <el-button>问题反馈</el-button>
+                </template>
+              </el-popover>
+          </div>
       </el-aside>
       <el-main id="mapItem">
         <div id="container"></div>
       </el-main>
-      <el-aside>
-        <cityIntroduce :cityData="cityListInfo" :clickedCity="clickedCity" :travelInfo="travelInfo"></cityIntroduce>
-      </el-aside>
     </el-container>
-    <el-drawer v-model="drawerVal" title="城市游玩攻略">
+    <el-drawer id="drawer" v-model="drawerVal" title="城市游玩攻略">
         <el-table :data="travelInfo" style="width: 100%" border>
-          <el-table-column  prop="title" :label="clickedCity">
+          <el-table-column  prop="title" :label="`${clickedCity}-精选游玩攻略`">
             <template v-slot="{ row }">
               <span @click="handleClick(row)" id="guideTitle">{{ row.title }}</span>
             </template>
           </el-table-column>
         </el-table>
-  </el-drawer>
+        <span id="warning">以上攻略均来自“去哪儿旅行”，如有侵权，请联系删改。</span>
+    </el-drawer>
+    <cityIntroduce id="gtpQuery" :cityData="cityListInfo" :clickedCity="clickedCity" :travelInfo="travelInfo"></cityIntroduce>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted, reactive, provide, watch } from "vue";
 import AMapLoader from "@amap/amap-jsapi-loader";
 import { useUserStore } from "@/stores/user.js"
-import { SwitchButton, User } from '@element-plus/icons-vue'
+import { SwitchButton, User,Picture } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
+import { userAvatarService } from '@/api/user.js'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -114,6 +141,37 @@ const handleClick = (row) => {
   }
 };
 
+const toRefresh = () => {
+  location.reload()
+}
+
+
+const avatar = ref('');
+
+const changeAvatar =  () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange =  (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      avatar.value = e.target.result;
+      console.log(avatar.value);
+      const res = await userAvatarService(userStore.user.uniqueId,avatar.value)
+      console.log(res);
+      if(res.data.code === 1) {
+        userStore.user.avatarUrl = res.data.data
+      } else {
+        alert('更新头像失败！')
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+};
+
+
 const reciveInfo = (originPoint, targetPoint, policyType) => {
   // console.log(originPoint, targetPoint);
   map.clearMap();
@@ -129,15 +187,16 @@ const reciveInfo = (originPoint, targetPoint, policyType) => {
     var geocoder = new amap.Geocoder({})
     var address = [originPlace.value, targetPalce.value];
     geocoder.getLocation(address, function(status, result) {
-      if (status === 'complete' && result.info === 'OK') {
+     
+      if(status === 'complete' && result.info === 'OK') {
         // result中对应详细地理坐标信息
-        // console.log(result);
+        try{
         startLng.value = result.geocodes[0].location.lng
         startLat.value = result.geocodes[0].location.lat
         endLng.value = result.geocodes[1].location.lng
         endLat.value = result.geocodes[1].location.lat
         // console.log(startLng.value,startLat.value,endLng.value,endLat.value);
-
+        
         amap.plugin("AMap.Driving", function () {
           var driving = new amap.Driving({
             policy: 0, //驾车路线规划策略，0是速度优先的策略
@@ -248,9 +307,12 @@ const reciveInfo = (originPoint, targetPoint, policyType) => {
               // 处理其他类型消息的逻辑
             }
         }
-       
-      }
-    })
+        }
+      catch(error){
+        alert('请检查地点输入是否有误！当前仅支持地级市输入！')  
+        location.reload();
+      } 
+    }})
   })
 }
 
@@ -300,6 +362,8 @@ onUnmounted(() => {
     height: 97vh;
     min-width: 250px;
     margin-right: 5px;
+    background: url("@/assets/asideImg.png")  ;
+    position: relative;
     #statisticData {
       text-align: center;
     }
@@ -323,6 +387,36 @@ onUnmounted(() => {
     font-size: 14px;
     text-decoration: underline;
     cursor: pointer;
+    transition: 1s;
 }
+#guideTitle:hover {
+  transform: scale(1.2);
+}
+#gtpQuery {
+  position: fixed; 
+  top: 1%; 
+  left: 70%; 
+  z-index: 9999; 
+  width: 30vw
+}
+#bottomBox {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+}
+
+#fixedAlert {
+  margin-right: 40px;
+}
+
+#drawer {
+  position: relative;
+}
+#warning {
+  position: absolute;
+  bottom: 5px;
+  font-weight: 700;
+}
+
 </style>
 

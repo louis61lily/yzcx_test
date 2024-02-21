@@ -1,6 +1,6 @@
 <script setup>
 import { User, Lock, Message, Tickets} from '@element-plus/icons-vue'
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import {
   userLoginService,
   getVerifyCodeService,
@@ -13,14 +13,11 @@ const form = ref()
 // 路由
 const router = useRouter()
 
-// 注册登录判断
-const isRegister = ref(false)
-
 const userStore = useUserStore()
 // 登录逻辑处理
 const handleLogin = async function () {
-  console.log(loginForm.username,loginForm.password);
-  const res = await userLoginService(loginForm.username,loginForm.password)
+  console.log(loginForm.email,loginForm.password);
+  const res = await userLoginService(loginForm.email,loginForm.password)
   console.log(res);
   if (res.data.code === 1) {
     router.push('/home')
@@ -40,6 +37,7 @@ const handleRegist = async function() {
     alert(res.data.msg)
     // userStore.user.username = 'mikano'
   }
+
 }
 
 // 定时器
@@ -68,6 +66,9 @@ const getVerifyCode = async function() {
   
 }
 
+// 注册登录判断
+const isRegister = ref(false)
+
 const registForm = reactive(
   {
     username: '',
@@ -83,6 +84,15 @@ const loginForm = reactive(
     password: ''
   }
 )
+
+watch(isRegister,()=> {
+  registForm.code = '',
+  registForm.email = '',
+  registForm.password = '',
+  registForm.username = '',
+  loginForm.email = '',
+  loginForm.password = ''
+})
 
 const rules = {
   username: [
@@ -127,10 +137,13 @@ const rules = {
 
 const getCode = ref(true)
 
-
+const toRefresh = () => {
+  location.reload()
+}
 </script>
 
 <template>
+  <img @click="toRefresh" src="@/assets/图片1.png" style="position: fixed; top: 5px; left: 5px; z-index: 9999; width: 70px; height:70px;">
   <el-row class="login-page">
     <el-col :span="12" class="bg">
       <!-- 后续构建 -->
@@ -208,7 +221,6 @@ const getCode = ref(true)
         </el-form-item>
         <el-form-item class="flex">
           <div class="flex">
-            <el-checkbox>记住我</el-checkbox>
             <el-link type="primary" :underline="false">忘记密码？</el-link>
           </div>
         </el-form-item>
@@ -225,6 +237,7 @@ const getCode = ref(true)
       </el-form>
     </el-col>
   </el-row>
+  <p class="footer" style="position: fixed; bottom: 5px; left: 38%;z-index: 9999; color: #909399; ">YZCX ©2024 Created by FourSheeps</p>
 </template>
 
 <style lang="scss" scoped>

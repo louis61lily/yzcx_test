@@ -1,22 +1,30 @@
 <template>
-      <el-card :body-style="{ padding: '0px' }">
-        <div>
-          <span>{{ truncatedIntroduce }}</span>
-          <el-button v-if="showToggle" @click="toggleIntroduce">{{ toggleText }}</el-button>
-        </div>
-        <div style="padding: 10px">
-          <span>沿途城市介绍</span>
+<el-card :body-style="{ padding: '5px' }">
+  <el-collapse>
+    <el-collapse-item class="custom-collapse-item">
+        <template #title>
+          <el-icon><Setting /></el-icon>
+          <span class="tool-title">城市介绍工具</span>
+        </template>
+        <span class="cityInfo">&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{{ truncatedIntroduce }}</span>
+        <el-button text v-if="showToggle" @click="toggleIntroduce">{{ toggleText }}</el-button>
+        <div style="padding: 10px; border-top:1px solid #909399">
+          <span class="title-class">沿途城市介绍</span>
           <div class="bottom">
-             <el-cascader style="width:60%" v-model="value" :options="cities" @change="handleChange" placeholder="请选择查询城市"/>
-            <el-button text class="button" @click="queryCityInfo" style="margin-right:5px; width:30%" :disabled="isDisabled"> 点击查询</el-button>
+            <el-cascader style="width:60%" v-model="value" :options="cities" @change="handleChange" placeholder="请选择查询城市" popper-class="custom-popper-class"></el-cascader>
+            <el-button text class="button" @click="queryCityInfo" style="margin-right:5px; width:30%; font-weight:700;" :disabled="isDisabled"> 点击查询</el-button>
           </div>
         </div>
-      </el-card>
+     </el-collapse-item>
+  </el-collapse>
+</el-card>
+
 </template>
 
 <script setup>
 import {ref, defineProps, watch, computed} from 'vue'
 import { getIntroduceService } from '@/api/ai.js' 
+import { Setting } from '@element-plus/icons-vue'
 
 
 // 接收父组件传值
@@ -96,9 +104,23 @@ const queryCityInfo = async() => {
 </script>
 
 <style>
-.time {
-  font-size: 12px;
-  color: #0e4272;
+.cityInfo {
+   color: #909399; 
+  font-size: 14px; 
+  font-weight: 400;
+  padding: 5px;
+}
+.tip-class {
+  color: #909399; 
+  font-size: 14px;
+  font-style: italic;
+  font-weight: 700;
+}
+.title-class {
+  color: #909399; 
+  font-size: 18px;
+  font-style: italic;
+  font-weight: 700;
 }
 
 .bottom {
@@ -117,5 +139,14 @@ const queryCityInfo = async() => {
 .image {
   width: 100%;
   display: block;
+}
+.tool-title {
+  color: #909399; 
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.el-collapse-item__content {
+  padding-bottom: 0;
 }
 </style>
