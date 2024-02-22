@@ -36,6 +36,8 @@ const handleRegist = async function() {
   if (res.data.code === 1) {
     alert(res.data.msg)
     // userStore.user.username = 'mikano'
+  } else {
+    alert("注册失败，请检查填写内容！")
   }
 
 }

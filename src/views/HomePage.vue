@@ -1,5 +1,4 @@
 <template>
-  
   <div id="fixedAlert" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; width: 30vw">
     <el-alert
     title="Tip"
@@ -10,7 +9,7 @@
   </div>
     <el-container id="box">
       <el-aside id="interactiveItem">
-        <img @click="toRefresh" src="@/assets/图片1.png" style="position: fixed; top: 5px; left: 5px; z-index: 9999; width: 70px; height:70px;">
+        <img @click="toRefresh" src="@/assets/图片1.png" id="logo">
         <interactiveBox @dataChanged="reciveInfo" />
           <el-row  v-if="statistic.distance" id="statisticData">
             <el-col :span="8">
@@ -371,6 +370,14 @@ onUnmounted(() => {
       background-color: grey;
       margin-top: 50px
     }
+    #logo {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 60px;
+      height: 60px;
+    }
+
   }
   #mapItem {
     height: 97vh;
