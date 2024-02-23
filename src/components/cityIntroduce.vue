@@ -59,13 +59,6 @@ watch(() => props.cityData, (newVal) => {
   cities.value = transformData(newVal);
 });
 
-watch(() => props.clickedCity, (newVal) => {
-  console.log(props.clickedCity);
-});
-
-watch(() => props.travelInfo, (newVal) => {
-  console.log(props.travelInfo);
-});
 
 const cityStr = ref('')
 const introduce = ref('')
@@ -92,12 +85,10 @@ const toggleIntroduce = () => {
 const handleChange = async (cityValue) => {
     cityStr.value = cityValue
     isDisabled.value = false
-    console.log(cityStr.value);
 }
 const queryCityInfo = async() => {
     // 调ai
     const res = await getIntroduceService(cityStr.value)
-    console.log(res);
     introduce.value = res.data
 }
 

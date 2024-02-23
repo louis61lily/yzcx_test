@@ -1,5 +1,6 @@
 <template>
-  <div id="fixedAlert" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; width: 30vw">
+  <chart-box v-show="!isStart" ></chart-box>
+  <div v-show="isStart" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 999; width: 30vw">
     <el-alert
     title="Tip"
     type="info"
@@ -7,21 +8,55 @@
     show-icon
   />
   </div>
-    <el-container id="box">
+  <el-container  id="box">
       <el-aside id="interactiveItem">
         <img @click="toRefresh" src="@/assets/图片1.png" id="logo">
         <interactiveBox @dataChanged="reciveInfo" />
-          <el-row  v-if="statistic.distance" id="statisticData">
-            <el-col :span="8">
-              <el-statistic title="路线全长" :value="`${statistic.distance/1000}km`" />
-            </el-col>
-            <el-col :span="8">
-              <el-statistic title="花费时间" :value="`${(statistic.time/3600.0).toFixed(2)}h`" />
-            </el-col>
-            <el-col :span="8">
-               <el-statistic title="预计费用" :value="`${statistic.toll}元`" />
-            </el-col>
-          </el-row>
+        <el-row :gutter="12" v-if="statistic.distance" id="statisticData">
+          <el-col :span="8">
+            <el-card shadow="hover"> 
+              <div class="discribeRoute">
+                路线全长
+              </div>
+              <div class="RouteData">
+                {{(statistic.distance/1000).toFixed(1)}}km 
+              </div>
+            </el-card>
+          </el-col>
+          <el-col :span="8">
+            <el-card shadow="hover">
+              <div class="discribeRoute">驾车时间</div> 
+              <div class="RouteData">
+                {{(statistic.time/3600.0).toFixed(2)}}h 
+              </div>
+            </el-card>
+          </el-col>
+          <el-col :span="8">
+            <el-card shadow="hover"> 
+              <div class="discribeRoute">
+                预计花费
+              </div>
+              <div class="RouteData">
+                {{statistic.toll}}元
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+        <hr v-if="statistic.toll">
+        <div class="flex gap-2">
+          <div v-if="cityListInfo" class="cityTitle">途 经 城 市</div> <br>
+          <el-tag
+            v-for="item in cityListInfo"
+            :key="item"
+            effect="dark"
+            round
+            class="tagItem"
+          >
+            {{ item }}
+          </el-tag>
+        </div>
+        <hr v-if="statistic.toll">
+        <div class="userUse">欢迎使用!</div>
           <div id="bottomBox">
               <span id="fixedAlert">
                    <el-dropdown placement="bottom-end" @command="handleCommand">
@@ -32,6 +67,9 @@
                      <template #dropdown>
                        <el-dropdown-menu>
                          <el-dropdown-item command="logout" :icon="SwitchButton" @click="logouthandeler">退出登录</el-dropdown-item>
+                       </el-dropdown-menu>
+                        <el-dropdown-menu>
+                         <el-dropdown-item :icon="Folder"  @click="handleRecord">收藏记录</el-dropdown-item>
                        </el-dropdown-menu>
                        <el-dropdown-menu>
                          <el-dropdown-item :icon="Picture"  @click="changeAvatar">更改头像</el-dropdown-item>
@@ -69,31 +107,54 @@
       <el-main id="mapItem">
         <div id="container"></div>
       </el-main>
-    </el-container>
-    <el-drawer id="drawer" v-model="drawerVal" title="城市游玩攻略">
+  </el-container>
+  <el-drawer v-show="isStart" id="drawer" v-model="drawerVal" title="城市游玩攻略">
         <el-table :data="travelInfo" style="width: 100%" border>
           <el-table-column  prop="title" :label="`${clickedCity}-精选游玩攻略`">
             <template v-slot="{ row }">
-              <span @click="handleClick(row)" id="guideTitle">{{ row.title }}</span>
+              <!-- <span @click="handleClick(row)" id="guideTitle">{{ row.title }}</span> -->
+              
+              <el-popover placement="left" trigger="hover" :width="400">
+                <template #reference>
+                  <span @click="handleClick(row)" id="guideTitle">{{ row.title }}</span>
+                </template>
+                <el-carousel indicator-position="none">
+                  <el-carousel-item v-if="row.img_list" v-for="item in row.img_list" :key="item">
+                    <img :src="item" style="width: 100%; height: 100%; ">
+                  </el-carousel-item>
+                  <el-carousel-item v-else>
+                    <p>暂无数据</p>
+                  </el-carousel-item>
+                </el-carousel>
+
+              </el-popover>
+
             </template>
           </el-table-column>
         </el-table>
         <span id="warning">以上攻略均来自“去哪儿旅行”，如有侵权，请联系删改。</span>
-    </el-drawer>
-    <cityIntroduce id="gtpQuery" :cityData="cityListInfo" :clickedCity="clickedCity" :travelInfo="travelInfo"></cityIntroduce>
+  </el-drawer>
+  <cityIntroduce v-show="isStart" id="gtpQuery" :cityData="cityListInfo" :clickedCity="clickedCity" :travelInfo="travelInfo"></cityIntroduce>
+  <el-dialog v-model="dialogTableVisible" title="收藏历史" width="800">
+    <el-table :data="recordData">
+      <el-table-column prop="time" label="收藏时间" center />
+      <el-table-column prop="startCity" label="出发地" center />
+      <el-table-column prop="targetCity" label="目的地" center />
+    </el-table>
+  </el-dialog>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted, reactive, provide, watch } from "vue";
 import AMapLoader from "@amap/amap-jsapi-loader";
 import { useUserStore } from "@/stores/user.js"
-import { SwitchButton, User,Picture } from '@element-plus/icons-vue'
+import { SwitchButton, User, Picture, Folder } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { userAvatarService } from '@/api/user.js'
+import { userAvatarService, addRecordService, getRecordService } from '@/api/user.js'
+
 
 const router = useRouter()
 const userStore = useUserStore()
-console.log(userStore.user.avatarUrl);
 
 const logouthandeler = () => {
   userStore.setUser({})
@@ -124,6 +185,19 @@ const allData = ref({})
 const travelInfo = ref()
 const drawerVal = ref(false)
 const polyline = ref(null) 
+
+const recordData = ref()
+const dialogTableVisible =  ref(false)
+const handleRecord = async() => {
+  const res = await getRecordService(userStore.user.uniqueId)
+  if(res.data.code === 1) {
+    recordData.value = res.data.data
+  } else {
+    alert('查询失败！请联系管理员查明原因')
+  }
+ dialogTableVisible.value = true
+}
+
 
 
 const statistic = reactive({
@@ -156,9 +230,7 @@ const changeAvatar =  () => {
     const reader = new FileReader();
     reader.onload = async (e) => {
       avatar.value = e.target.result;
-      console.log(avatar.value);
       const res = await userAvatarService(userStore.user.uniqueId,avatar.value)
-      console.log(res);
       if(res.data.code === 1) {
         userStore.user.avatarUrl = res.data.data
       } else {
@@ -170,9 +242,9 @@ const changeAvatar =  () => {
   input.click();
 };
 
+const isStart = ref(false)
 
 const reciveInfo = (originPoint, targetPoint, policyType) => {
-  // console.log(originPoint, targetPoint);
   map.clearMap();
   if (polyline.value) {
     map.remove(polyline.value);
@@ -180,7 +252,6 @@ const reciveInfo = (originPoint, targetPoint, policyType) => {
   originPlace.value = originPoint
   targetPalce.value = targetPoint
   policy_selected.value = policyType
-  // console.log(originPlace.value, targetPalce.value);
 
   amap.plugin('AMap.Geocoder', function() {
     var geocoder = new amap.Geocoder({})
@@ -194,7 +265,6 @@ const reciveInfo = (originPoint, targetPoint, policyType) => {
         startLat.value = result.geocodes[0].location.lat
         endLng.value = result.geocodes[1].location.lng
         endLat.value = result.geocodes[1].location.lat
-        // console.log(startLng.value,startLat.value,endLng.value,endLat.value);
         
         amap.plugin("AMap.Driving", function () {
           var driving = new amap.Driving({
@@ -205,7 +275,6 @@ const reciveInfo = (originPoint, targetPoint, policyType) => {
           driving.search(startLngLat, endLngLat, function (status, result) {
             //status：complete 表示查询成功，no_data 为查询无结果，error 代表查询错误
             //查询成功时，result 即为对应的驾车导航信息
-            console.log(result.routes[0].distance,result.routes[0].time,result.routes[0].tolls);
             statistic.distance = result.routes[0].distance
             statistic.time =  result.routes[0].time
             statistic.toll = result.routes[0].tolls
@@ -223,21 +292,16 @@ const reciveInfo = (originPoint, targetPoint, policyType) => {
         socket.onopen = function (e) {
           let sendInfo = JSON.stringify(info.value)
             socket.send(sendInfo)
-            // console.log(e)
         }
        
         socket.onmessage = function (e) {
            const data = JSON.parse(e.data) // 将接收到的消息转换为JSON对象
            if (data.hasOwnProperty('code') && data.code !== 200) {
-              console.log('请求失败!');
               return
             }else if (data.hasOwnProperty('city')) {
-              console.log('接收到消息2:', data.city)
               cityListInfo.value =  data.city
 
               var cityList = data.city;
-              // console.log(cityList);
-              // console.log(cityList.length);
 
               const batchSize = 10;
               const cityChunks = [];
@@ -258,7 +322,6 @@ const reciveInfo = (originPoint, targetPoint, policyType) => {
                 
                   geocoder.getLocation(citiesToGeocode, function(status, result) {
                       if (status === 'complete' && result.info === 'OK') {
-                          console.log(result, 111111111);
                           if (result.geocodes.length > 0) {
                               const path = [];
                               for (let i = 0; i < result.geocodes.length; i++) {
@@ -273,14 +336,10 @@ const reciveInfo = (originPoint, targetPoint, policyType) => {
                                   map.add(marker);
                                   marker.on('click', function (event) {
                                       // 在这里编写点击事件的处理逻辑
-                                      console.log('Marker 被点击啦！', event);
                                       clickedCity.value = result.geocodes[i].formattedAddress
                                       theCity.value = result.geocodes[i].addressComponent.city
-                                      console.log( theCity.value);
                                       travelInfo.value = allData[theCity.value]
-                                      console.log(travelInfo.value);
                                       drawerVal.value = true
-                                      console.log(drawerVal.value);
                                   });
                               }
                               const polyline = new amap.Polyline({
@@ -293,17 +352,14 @@ const reciveInfo = (originPoint, targetPoint, policyType) => {
                               map.setFitView();
                           }
                       } else {
-                          console.log('Geocoding failed with status:', status);
+                          alert('Geocoding failed with status:', status);
                       }
                   });
               });
             } else if (data.hasOwnProperty('travel_guides')){
               allData[data.name] = data.travel_guides;
-              console.log(data);
             } 
             else {
-              console.log('接收到其他消息:', data)
-              // 处理其他类型消息的逻辑
             }
         }
         }
@@ -328,7 +384,6 @@ onMounted(() => {
     .then((AMap) => {
       // 设置地图容器id
       amap = AMap
-      //console.log(amap);
        map = new AMap.Map("container", {
         viewMode: '3D', //展示类型
         zoom: 11, // 初始化地图的缩放级别
@@ -347,6 +402,10 @@ onMounted(() => {
     .catch((e) => {
       console.log(e);
     });
+    
+    setTimeout(()=> {
+      isStart.value = true
+    },3000)
 });
 
 onUnmounted(() => {
@@ -355,6 +414,20 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.cityTitle{
+  color: #909399; 
+  font-size: 16px; 
+  font-weight: 700;
+  position: absolute;
+  transform: translateX(-50%);
+  left: 50%;
+}
+
+.tagItem {
+  margin: 5px;
+  margin-left: 10px;
+}
+ 
 #box {
   #interactiveItem {
     // background-color: #4d85ed;
@@ -403,7 +476,7 @@ onUnmounted(() => {
   position: fixed; 
   top: 1%; 
   left: 70%; 
-  z-index: 9999; 
+  z-index: 999; 
   width: 30vw
 }
 #bottomBox {
@@ -424,6 +497,26 @@ onUnmounted(() => {
   bottom: 5px;
   font-weight: 700;
 }
-
+.discribeRoute {
+  color: #909399; 
+  font-size: 12px; 
+  font-weight: 400;
+}
+.routeData {
+  text-align: center;
+  color: #909399; 
+  font-size: 14px; 
+  font-weight: 700;
+  margin-top: 5px;
+}
+.userUse {
+  position: fixed;
+  bottom: 90px;
+  font-size: 32px;
+  font-weight: 700;
+  margin-left: 80px;
+  color: #909399;
+  font-style: italic;
+}
 </style>
 

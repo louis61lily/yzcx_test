@@ -1,7 +1,6 @@
 import axios from 'axios';
 
 export const getIntroduceService = (cityStr) => {
-    console.log(cityStr, 999999);
 
     const formData = new FormData();
     formData.append('city', cityStr);
